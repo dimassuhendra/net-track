@@ -45,23 +45,23 @@
 
         @if(in_array(Auth::user()->role, ['admin', 'manager_it', 'gm']))
         <div class="pt-4 pb-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-widest">Laporan</div>
-        <a href="/reports"
+        <a href="{{ route('reports.index') }}"
             class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 hover:text-white transition-all">
             <i class="fa-solid fa-chart-line w-5"></i>
-            <span>Laporan Bulanan</span>
+            <span>Analisa Laporan</span>
         </a>
         @endif
 
         @if(Auth::user()->role == 'admin')
         <div class="pt-4 pb-2 px-4 text-xs font-semibold text-slate-500 uppercase tracking-widest">Sistem Admin</div>
 
-        <a href="/users"
+        <a href="{{ route('users.index') }}"
             class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 hover:text-white transition-all">
             <i class="fa-solid fa-user-gear w-5 text-amber-500"></i>
             <span>Manajemen User</span>
         </a>
 
-        <a href="/activity-logs"
+        <a href="{{ route('audit.index') }}"
             class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 hover:text-white transition-all">
             <i class="fa-solid fa-clock-rotate-left w-5"></i>
             <span>Audit Log (History)</span>
