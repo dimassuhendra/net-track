@@ -38,8 +38,8 @@ class TicketController extends Controller
             'user_id' => auth()->id(),
             'waktu_mulai' => now(),
             'rincian_masalah' => $request->rincian_masalah,
-            'action_taken' => $request->action_taken, // Pakai nama kolom action_taken
-            'status' => 'Open',
+            'action_taken' => $request->action_taken,
+            'status' => $request->status,
             'priority' => $request->priority,
         ]);
 

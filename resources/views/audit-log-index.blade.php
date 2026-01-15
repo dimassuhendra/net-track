@@ -2,29 +2,60 @@
 
 @section('content')
     <div class="space-y-6">
-        <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
-            <form class="flex flex-wrap gap-4 items-end">
-                <div class="flex-1 min-w-[200px]">
-                    <label
-                        class="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Petugas</label>
-                    <input type="text" name="user" value="{{ request('user') }}"
-                        class="w-full bg-slate-50 border-0 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-blue-500/20"
-                        placeholder="Cari nama petugas...">
+        <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+            <form action="{{ route('audit.index') }}" method="GET" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Cari Petugas</label>
+                        <input type="text" name="user" value="{{ request('user') }}"
+                            class="w-full bg-slate-50 border-0 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-blue-500/20"
+                            placeholder="Nama petugas...">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Objek/Model</label>
+                        <select name="model" class="w-full bg-slate-50 border-0 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-blue-500/20">
+                            <option value="">Semua Model</option>
+                            <option value="Ticket" {{ request('model') == 'Ticket' ? 'selected' : '' }}>Tiket</option>
+                            <option value="Customer" {{ request('model') == 'Customer' ? 'selected' : '' }}>Pelanggan</option>
+                            <option value="User" {{ request('model') == 'User' ? 'selected' : '' }}>User/Staff</option>
+                        </select>
+                    </div>
+
+                    <div class="md:col-span-2 space-y-2">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Rentang Tanggal</label>
+                        <div class="flex items-center gap-3">
+                            <input type="date" name="start_date" value="{{ request('start_date') }}"
+                                class="flex-1 bg-slate-50 border-0 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-blue-500/20">
+                            <span class="text-slate-300 font-bold">s/d</span>
+                            <input type="date" name="end_date" value="{{ request('end_date') }}"
+                                class="flex-1 bg-slate-50 border-0 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-blue-500/20">
+                        </div>
+                    </div>
                 </div>
-                <div class="w-48">
-                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Model</label>
-                    <select name="model"
-                        class="w-full bg-slate-50 border-0 rounded-2xl px-5 py-3 text-sm focus:ring-2 focus:ring-blue-500/20">
-                        <option value="">Semua Model</option>
-                        <option value="Ticket" {{ request('model') == 'Ticket' ? 'selected' : '' }}>Tiket</option>
-                        <option value="Customer" {{ request('model') == 'Customer' ? 'selected' : '' }}>Pelanggan</option>
-                        <option value="User" {{ request('model') == 'User' ? 'selected' : '' }}>User/Staff</option>
-                    </select>
+
+                <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-50">
+                    <div class="flex items-center gap-3">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tampilkan:</label>
+                        <select name="per_page" onchange="this.form.submit()" 
+                            class="bg-slate-100 border-0 rounded-xl px-4 py-2 text-xs font-bold focus:ring-0">
+                            @foreach([10, 20, 50, 100, 'all'] as $val)
+                                <option value="{{ $val }}" {{ request('per_page', 10) == $val ? 'selected' : '' }}>
+                                    {{ strtoupper($val) }} Baris
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <a href="{{ route('audit.index') }}"
+                            class="bg-slate-100 text-slate-500 px-8 py-3 rounded-2xl font-bold text-sm hover:bg-slate-200 transition-all">Reset</a>
+                        <button type="submit"
+                            class="bg-blue-600 text-white px-10 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all">
+                            Terapkan Filter
+                        </button>
+                    </div>
                 </div>
-                <button type="submit"
-                    class="bg-slate-900 text-white px-8 py-3 rounded-2xl font-bold text-sm hover:bg-black transition-all">Filter</button>
-                <a href="{{ route('audit.index') }}"
-                    class="bg-slate-100 text-slate-500 px-8 py-3 rounded-2xl font-bold text-sm">Reset</a>
             </form>
         </div>
 
@@ -32,13 +63,10 @@
             <table class="w-full text-left border-collapse">
                 <thead class="bg-slate-50">
                     <tr>
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Waktu &
-                            Petugas</th>
+                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Waktu & Petugas</th>
                         <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Aktivitas</th>
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Objek (Model)
-                        </th>
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">IP
-                            Address</th>
+                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Objek (Model)</th>
+                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">IP Address</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
@@ -46,8 +74,7 @@
                         <tr class="hover:bg-slate-50/50 transition-colors">
                             <td class="px-8 py-5">
                                 <div class="flex items-center gap-4">
-                                    <div
-                                        class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-500 text-xs">
+                                    <div class="w-10 h-10 rounded-full bg-white border-2 border-slate-100 flex items-center justify-center font-black text-slate-500 text-xs">
                                         {{ strtoupper(substr($log->user->name ?? '?', 0, 1)) }}
                                     </div>
                                     <div>
