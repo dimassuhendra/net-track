@@ -37,9 +37,8 @@
             <span>Data Pelanggan</span>
         </a>
 
-        <a href="/categories"
-            class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 hover:text-white transition-all">
-            <i class="fa-solid fa-tags w-5"></i>
+        <a href="{{ route('categories.index') }}" class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-800 transition-all">
+            <i class="fa-solid fa-tag w-5 text-blue-400"></i>
             <span>Kategori Masalah</span>
         </a>
         @endif
