@@ -45,4 +45,40 @@ class TicketController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Tiket berhasil dibuat!');
     }
+
+    public function index(Request $request)
+    {
+        $query = Ticket::with(['customer', 'category'])->latest();
+
+        // Filter berdasarkan Status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter berdasarkan Range Tanggal (Waktu Mulai)
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereBetween('waktu_mulai', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
+        }
+
+        // Fitur Pencarian
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('ticket_number', 'like', '%' . $request->search . '%')
+                    ->orWhereHas('customer', function ($c) use ($request) {
+                        $c->where('nama_pelanggan', 'like', '%' . $request->search . '%');
+                    });
+            });
+        }
+
+        $tickets = $query->paginate(15)->withQueryString();
+
+        return view('ticket-index', compact('tickets'));
+    }
+
+    // Fungsi untuk menghapus histori jika diperlukan
+    public function destroy(Ticket $ticket)
+    {
+        $ticket->delete();
+        return back()->with('success', 'Histori gangguan berhasil dihapus.');
+    }
 }
