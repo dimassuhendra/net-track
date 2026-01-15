@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class TicketController extends Controller
 {
@@ -70,7 +71,16 @@ class TicketController extends Controller
             });
         }
 
-        $tickets = $query->paginate(15)->withQueryString();
+        // Aksi Export (Jika tombol download ditekan)
+        if ($request->has('export')) {
+            return Excel::download(new TicketsExport($query), 'laporan-gangguan.xlsx');
+        }
+
+        // Logika Paginasi
+        $perPage = $request->get('per_page', 10);
+        $tickets = ($perPage === 'all')
+            ? $query->paginate($query->count())->withQueryString()
+            : $query->paginate((int) $perPage)->withQueryString();
 
         return view('ticket-index', compact('tickets'));
     }
