@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\Customer;
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -16,10 +17,10 @@ class TicketController extends Controller
     {
         $customers = Customer::all();
         $categories = Category::all();
-        return view('ticket-create', compact('customers', 'categories'));
+        $users = User::where('role', 'staff')->get();
+        return view('ticket-create', compact('customers', 'categories', 'users'));
     }
 
-    // Menyimpan Data ke Database
     public function store(Request $request)
     {
         $request->validate([
@@ -27,24 +28,39 @@ class TicketController extends Controller
             'category_id' => 'required',
             'priority' => 'required',
             'rincian_masalah' => 'required',
-            'action_taken' => 'required', // Sesuaikan dengan nama di DB
+            'pic_id' => 'required',
         ]);
 
         $ticketNumber = 'TIC-' . date('Ymd') . '-' . rand(100, 999);
 
-        \App\Models\Ticket::create([
-            'ticket_number' => $ticketNumber,
+        // Logika Penentuan Waktu Mulai
+        $waktuMulai = now();
+        // Cek jika user adalah manager dan menginputkan tanggal manual
+        if (auth()->user()->role == 'manager' && $request->filled('waktu_mulai_manual')) {
+            $waktuMulai = $request->waktu_mulai_manual;
+        }
+
+        $ticket = Ticket::create([
+            'ticket_number' => 'TIC-' . date('Ymd') . '-' . rand(100, 999),
             'customer_id' => $request->customer_id,
             'category_id' => $request->category_id,
             'user_id' => auth()->id(),
-            'waktu_mulai' => now(),
+            'pic_id' => $request->pic_id,
+            'waktu_mulai' => (auth()->user()->role == 'manager' && $request->filled('waktu_mulai_manual'))
+                ? $request->waktu_mulai_manual : now(),
             'rincian_masalah' => $request->rincian_masalah,
             'action_taken' => $request->action_taken,
             'status' => $request->status,
             'priority' => $request->priority,
         ]);
 
-        return redirect()->route('dashboard')->with('success', 'Tiket berhasil dibuat!');
+        // OPSI: Di sini Anda bisa menambahkan logika pengiriman WA (WhatsApp Gateway API)
+        // $this->sendWhatsAppNotification($request->pic_id, $ticketNumber);
+
+        return redirect()->back()->with([
+            'success' => 'Tiket berhasil dibuat!',
+            'new_ticket' => $ticket->load('pic', 'customer')
+        ]);
     }
 
     public function index(Request $request)

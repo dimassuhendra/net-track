@@ -14,6 +14,7 @@ class Ticket extends Model
         'customer_id',
         'category_id',
         'user_id',
+        'pic_id',
         'waktu_mulai',
         'waktu_selesai',
         'rincian_masalah',
@@ -22,10 +23,13 @@ class Ticket extends Model
         'priority'
     ];
 
-    /**
-     * Casting atribut ke tipe data tertentu.
-     * Ini akan mengubah string datetime dari DB menjadi objek Carbon secara otomatis.
-     */
+    // Relasi ke PIC (User)
+    public function pic()
+    {
+        return $this->belongsTo(User::class, 'pic_id');
+    }
+
+    // Mengubah string datetime dari DB menjadi objek Carbon secara otomatis
     protected $casts = [
         'waktu_mulai' => 'datetime',
         'waktu_selesai' => 'datetime',
