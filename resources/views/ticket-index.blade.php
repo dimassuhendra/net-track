@@ -152,8 +152,19 @@
                                         {{ $ticket->status }}
                                     </span>
                                 </td>
-                                <td class="px-8 py-5 text-right">
+                                <td class="px-8 py-5">
                                     <div class="flex justify-end gap-2">
+                                        <button
+                                            onclick="showDetail({{ json_encode($ticket->load('customer', 'category', 'user', 'pic')) }}, '{{ $ticket->waktu_mulai->format('d M Y H:i') }}')"
+                                            class="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-50 text-blue-500 hover:bg-blue-600 hover:text-white transition-all border border-blue-100">
+                                            <i class="fa-solid fa-eye text-sm"></i>
+                                        </button>
+
+                                        <button onclick="openEditModal({{ $ticket }})"
+                                            class="w-9 h-9 flex items-center justify-center rounded-xl bg-amber-50 text-amber-500 hover:bg-amber-600 hover:text-white transition-all border border-amber-100">
+                                            <i class="fa-solid fa-pen-to-square text-sm"></i>
+                                        </button>
+
                                         <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST"
                                             onsubmit="return confirm('Hapus histori ini?')">
                                             @csrf @method('DELETE')
@@ -164,6 +175,7 @@
                                         </form>
                                     </div>
                                 </td>
+
                             </tr>
                         @empty
                             <tr>
@@ -184,4 +196,137 @@
             @endif
         </div>
     </div>
+
+    <div id="detailModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('detailModal')"></div>
+        <div class="bg-white rounded-[2.5rem] w-full max-w-2xl relative z-10 overflow-hidden shadow-2xl">
+            <div class="bg-slate-900 p-8 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-black uppercase" id="det-ticket-number">#TIC-0000</h3>
+                    <p class="text-slate-400 text-xs mt-1 uppercase tracking-widest">Detail Laporan Gangguan</p>
+                </div>
+                <button onclick="closeModal('detailModal')" class="text-slate-400 hover:text-white"><i
+                        class="fa-solid fa-xmark fa-xl"></i></button>
+            </div>
+            <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Pelanggan</label>
+                        <p class="font-bold text-slate-800" id="det-customer">-</p>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">PIC Petugas</label>
+                        <p class="font-bold text-slate-800" id="det-pic">-</p>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Waktu Lapor</label>
+                        <p class="font-bold text-slate-800" id="det-time">-</p>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase block mb-1">Durasi Penanganan</label>
+                        <p class="font-bold text-blue-600" id="det-duration">-</p>
+                    </div>
+                </div>
+                <hr class="border-slate-100">
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase block mb-2">Rincian Masalah</label>
+                    <div class="bg-slate-50 p-4 rounded-2xl text-sm text-slate-700 italic border-l-4 border-slate-200"
+                        id="det-issue"></div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-blue-600 uppercase block mb-2">Tindakan Petugas (Action
+                        Taken)</label>
+                    <div class="bg-blue-50 text-blue-700 p-4 rounded-2xl text-sm font-medium border-l-4 border-blue-200"
+                        id="det-action">Belum ada tindakan.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="editModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('editModal')"></div>
+        <div class="bg-white rounded-[2.5rem] w-full max-w-lg relative z-10 overflow-hidden shadow-2xl">
+            <form id="editForm" method="POST">
+                @csrf @method('PUT')
+                <div class="p-8">
+                    <h3 class="text-xl font-black text-slate-800 uppercase mb-6">Update Progress Tiket</h3>
+                    <div class="space-y-5">
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1">Status
+                                Laporan</label>
+                            <select name="status" id="edit-status"
+                                class="w-full bg-slate-50 border-0 rounded-2xl px-5 py-3 text-sm font-bold focus:ring-2 focus:ring-blue-500/20">
+                                <option value="Open">🔵 Open</option>
+                                <option value="In Progress">🟡 In Progress</option>
+                                <option value="Resolved">🟢 Resolved</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block ml-1">Tindakan (Action
+                                Taken)</label>
+                            <textarea name="action_taken" id="edit-action" rows="4"
+                                class="w-full bg-slate-50 border-0 rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-blue-500/20"
+                                placeholder="Tuliskan tindakan yang dilakukan..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex gap-3 mt-8">
+                        <button type="button" onclick="closeModal('editModal')"
+                            class="flex-1 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Batal</button>
+                        <button type="submit"
+                            class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold text-sm shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all">SIMPAN
+                            PERUBAHAN</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openEditModal(ticket) {
+            const modal = document.getElementById('editModal');
+            const form = document.getElementById('editForm');
+
+            // Set action URL secara dinamis
+            form.action = `/tickets/${ticket.id}`;
+
+            // Isi nilai
+            document.getElementById('edit-status').value = ticket.status;
+            document.getElementById('edit-action').value = ticket.action_taken || '';
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function showDetail(ticket, formattedTime) {
+            const modal = document.getElementById('detailModal');
+
+            document.getElementById('det-ticket-number').innerText = '#' + ticket.ticket_number;
+            document.getElementById('det-customer').innerText = ticket.customer.nama_pelanggan;
+            document.getElementById('det-pic').innerText = ticket.pic ? ticket.pic.name : '-';
+            document.getElementById('det-time').innerText = formattedTime;
+            document.getElementById('det-issue').innerText = ticket.rincian_masalah;
+            document.getElementById('det-action').innerText = ticket.action_taken || 'Belum ada tindakan yang dicatat.';
+
+            // Logika durasi sederhana
+            if (ticket.status === 'Resolved' && ticket.updated_at) {
+                const start = new Date(ticket.waktu_mulai);
+                const end = new Date(ticket.updated_at);
+                const diffMs = end - start;
+                const diffHrs = Math.floor(diffMs / 3600000);
+                const diffMins = Math.round(((diffMs % 3600000) / 60000));
+                document.getElementById('det-duration').innerText = `${diffHrs} Jam ${diffMins} Menit`;
+            } else {
+                document.getElementById('det-duration').innerText = 'Masih dalam proses';
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    </script>
 @endsection

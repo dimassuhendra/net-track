@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
         });
 
         // Khusus Delete Tiket (Opsional: Biasanya Admin/Manager)
+        Route::put('/tickets/{ticket}', [TicketController::class, 'update'])->name('tickets.update');
         Route::delete('/tickets/{ticket}', [TicketController::class, 'destroy'])->name('tickets.destroy');
     });
 

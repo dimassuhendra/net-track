@@ -101,6 +101,30 @@ class TicketController extends Controller
         return view('ticket-index', compact('tickets'));
     }
 
+    // Update Ticket (digunakan oleh Modal Edit)
+    public function update(Request $request, Ticket $ticket)
+    {
+        $request->validate([
+            'status' => 'required',
+            'action_taken' => 'nullable|string'
+        ]);
+
+        $data = [
+            'status' => $request->status,
+            'action_taken' => $request->action_taken,
+        ];
+
+        // Jika status diubah menjadi Resolved, catat waktu selesainya (jika ada kolomnya)
+        // Atau Anda bisa menggunakan logika durasi saat runtime di View.
+        if ($request->status == 'Resolved' && is_null($ticket->waktu_selesai)) {
+            $data['waktu_selesai'] = now();
+        }
+
+        $ticket->update($data);
+
+        return back()->with('success', 'Tiket #' . $ticket->ticket_number . ' berhasil diperbarui.');
+    }
+
     // Fungsi untuk menghapus histori jika diperlukan
     public function destroy(Ticket $ticket)
     {
