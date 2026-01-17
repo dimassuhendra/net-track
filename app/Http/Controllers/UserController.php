@@ -11,7 +11,16 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::latest()->paginate(10);
+        $users = User::withCount(['tickets as report_count', 'picTickets as pic_count'])
+            ->orderByRaw("CASE 
+            WHEN role = 'gm' THEN 1 
+            WHEN role = 'manager_it' THEN 2 
+            WHEN role = 'admin' THEN 3 
+            ELSE 4 
+        END ASC")
+            ->orderBy('name', 'asc') //
+            ->paginate(10);
+
         return view('user-index', compact('users'));
     }
 
@@ -20,12 +29,16 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'phone' => ['required', 'string', 'max:20'],
+            'role' => ['required', 'in:admin,staff,manager,gm'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone' => $request->phone,
+            'role' => $request->role,
             'password' => Hash::make($request->password),
         ]);
 
@@ -37,16 +50,23 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email,' . $user->id],
+            'phone' => ['required', 'string', 'max:20'],
+            'role' => ['required'],
         ]);
 
-        $user->update([
+        $data = [
             'name' => $request->name,
             'email' => $request->email,
-        ]);
+            'phone' => $request->phone,
+            'role' => $request->role,
+        ];
 
         if ($request->filled('password')) {
-            $user->update(['password' => Hash::make($request->password)]);
+            $request->validate(['password' => ['confirmed', Rules\Password::defaults()]]);
+            $data['password'] = Hash::make($request->password);
         }
+
+        $user->update($data);
 
         return redirect()->back()->with('success', 'Data petugas berhasil diperbarui.');
     }

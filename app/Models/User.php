@@ -14,6 +14,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'phone',
     ];
 
     protected $hidden = [
@@ -24,6 +25,12 @@ class User extends Authenticatable
     // Satu user bisa menginput banyak tiket
     public function tickets()
     {
-        return $this->hasMany(Ticket::class);
+        return $this->hasMany(Ticket::class, 'user_id');
     }
+
+    public function picTickets()
+    {
+        return $this->hasMany(Ticket::class, 'pic_id');
+    }
+
 }
