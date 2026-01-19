@@ -11,7 +11,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <div
                         class="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-fire-dot"></i>
+                        <i class="fa-solid fa-land-mine-on"></i>
                     </div>
                     <span class="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded-lg">Mendesak</span>
                 </div>
