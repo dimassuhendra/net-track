@@ -13,7 +13,7 @@ class ReportController extends Controller
 {
     public function index(Request $request)
     {
-        // Mengatur agar PHP punya waktu lebih (opsional)
+        // Mengatur agar PHP punya waktu lebih
         set_time_limit(60);
 
         $range = $request->get('range', '7_days');
@@ -40,25 +40,23 @@ class ReportController extends Controller
             $end = $now->copy()->endOfDay();
         }
 
-        // 1. Ambil data dasar hanya sekali (Eager Loading)
-        // Gunakan select untuk membatasi kolom agar memory tidak penuh
+        // 1. Ambil data dasar
         $tickets = Ticket::with(['category'])
             ->whereBetween('waktu_mulai', [$start, $end])
             ->get();
 
-        // 2. A & B: Statistik Kategori (Gunakan Collection Laravel, bukan Query baru lagi)
+        // 2. A & B: Statistik Kategori
         $categoryData = $tickets->groupBy('category.nama_kategori')->map(function ($row) {
             return ['nama_kategori' => $row->first()->category->nama_kategori ?? 'N/A', 'total' => $row->count()];
         })->values();
 
-        // 3. C: Peak Hours (Gunakan database untuk perhitungan jam agar cepat)
+        // 3. C: Peak Hours
         $hourlyTrends = Ticket::whereBetween('waktu_mulai', [$start, $end])
             ->select(DB::raw('HOUR(waktu_mulai) as hour'), DB::raw('count(*) as total'))
             ->groupBy('hour')
             ->get();
 
         // 4. D: Durasi / SLA (Hanya ambil yang Resolved dan hitung selisih di Database)
-        // Ini bagian yang paling sering menyebabkan error jika dilakukan lewat looping PHP
         $durationsData = Ticket::whereBetween('waktu_mulai', [$start, $end])
             ->whereStatus('Resolved')
             ->whereNotNull('waktu_selesai')
@@ -70,7 +68,7 @@ class ReportController extends Controller
         $start_str = $start->format('Y-m-d');
         $end_str = $end->format('Y-m-d');
 
-        // Tambahkan logika persentase pada categoryData di dalam method index
+        // logika persentase pada categoryData
         $totalTickets = $tickets->count();
         $categoryTable = $tickets->groupBy('category.nama_kategori')->map(function ($row) use ($totalTickets) {
             $count = $row->count();
@@ -81,8 +79,34 @@ class ReportController extends Controller
             ];
         })->values();
 
-        // Kirim $categoryTable ke view
-        return view('report-index', compact('categoryData', 'hourlyTrends', 'durations', 'start_str', 'end_str', 'range', 'categoryTable', 'totalTickets'));
+        // 5. Statistik Top 5 Kategori Pelanggan
+        $customerCategoryData = Ticket::with('customer')
+            ->whereBetween('waktu_mulai', [$start, $end])
+            ->get()
+            ->groupBy(function ($ticket) {
+                return $ticket->customer->nama_pelanggan ?? 'Umum';
+            })
+            ->map(function ($row, $label) {
+                return [
+                    'label' => $label,
+                    'total' => $row->count()
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(5)
+            ->values();
+
+        return view('report-index', compact(
+            'categoryData',
+            'hourlyTrends',
+            'durations',
+            'start_str',
+            'end_str',
+            'range',
+            'categoryTable',
+            'totalTickets',
+            'customerCategoryData'
+        ));
 
     }
 

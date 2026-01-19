@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Category;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Exports\TicketsExport;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -87,9 +88,12 @@ class TicketController extends Controller
             });
         }
 
-        // Aksi Export (Jika tombol download ditekan)
+        // Aksi Export
         if ($request->has('export')) {
-            return Excel::download(new TicketsExport($query), 'laporan-gangguan.xlsx');
+            $start = $request->start_date;
+            $end = $request->end_date;
+
+            return Excel::download(new TicketsExport($query, $start, $end), 'laporan-gangguan.xlsx');
         }
 
         // Logika Paginasi
@@ -114,8 +118,7 @@ class TicketController extends Controller
             'action_taken' => $request->action_taken,
         ];
 
-        // Jika status diubah menjadi Resolved, catat waktu selesainya (jika ada kolomnya)
-        // Atau Anda bisa menggunakan logika durasi saat runtime di View.
+        // Jika status diubah menjadi Resolved, catat waktu selesainya
         if ($request->status == 'Resolved' && is_null($ticket->waktu_selesai)) {
             $data['waktu_selesai'] = now();
         }
@@ -125,7 +128,7 @@ class TicketController extends Controller
         return back()->with('success', 'Tiket #' . $ticket->ticket_number . ' berhasil diperbarui.');
     }
 
-    // Fungsi untuk menghapus histori jika diperlukan
+    // Fungsi untuk menghapus
     public function destroy(Ticket $ticket)
     {
         $ticket->delete();
