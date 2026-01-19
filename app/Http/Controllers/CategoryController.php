@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
@@ -19,21 +21,38 @@ class CategoryController extends Controller
             'nama_kategori' => 'required|unique:categories,nama_kategori|max:255',
         ]);
 
-        Category::create([
-            'nama_kategori' => $request->nama_kategori
-        ]);
+        $category = Category::create($request->all());
 
-        return back()->with('success', 'Kategori baru berhasil ditambahkan!');
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'title' => 'KATEGORI DITAMBAHKAN',
+                'message' => auth()->user()->name . " telah menambah kategori baru: " . $category->nama_kategori,
+                'type' => 'activity'
+            ]);
+        }
+        return back()->with('success', 'Kategori berhasil ditambahkan.');
     }
 
     public function destroy(Category $category)
     {
-        // Cek jika kategori sudah digunakan di tiket, sebaiknya jangan dihapus
         if ($category->tickets()->count() > 0) {
-            return back()->with('error', 'Kategori tidak bisa dihapus karena sudah memiliki histori laporan.');
+            return back()->with('error', 'Kategori tidak bisa dihapus karena sudah digunakan.');
         }
 
+        $categoryName = $category->nama_kategori;
         $category->delete();
+
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'title' => 'KATEGORI DIHAPUS',
+                'message' => auth()->user()->name . " telah menghapus kategori: " . $categoryName,
+                'type' => 'activity'
+            ]);
+        }
         return back()->with('success', 'Kategori berhasil dihapus.');
     }
 }

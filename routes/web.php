@@ -9,6 +9,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\UserController;
+use App\Models\Notification;
 
 // Guest Route
 Route::middleware('guest')->group(function () {
@@ -20,9 +21,18 @@ Route::middleware('guest')->group(function () {
 // Auth Route
 Route::middleware('auth')->group(function () {
 
-    // Semua role bisa akses Dashboard & Logout
+    // Semua role bisa akses Dashboard, Logout dan Notifikasi
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    Route::post('/notifications/read/{id}', function ($id) {
+        $notification = Notification::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
+
+        $notification->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    })->name('notifications.read');
 
     // --- GRUP OPERASIONAL ---
     // (Admin, Staff, Manager IT)

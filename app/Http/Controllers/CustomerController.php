@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
     public function index()
     {
-        // Mengambil pelanggan dengan hitungan tiket mereka (histori)
         $customers = Customer::withCount('tickets')->latest()->get();
         return view('customer-index', compact('customers'));
     }
@@ -24,7 +25,18 @@ class CustomerController extends Controller
             'alamat' => 'nullable',
         ]);
 
-        Customer::create($request->all());
+        $customer = Customer::create($request->all());
+
+        // NOTIFIKASI UNTUK SEMUA ADMIN
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'title' => 'PELANGGAN BARU',
+                'message' => auth()->user()->name . " mendaftarkan pelanggan: " . $customer->nama_pelanggan,
+                'type' => 'activity'
+            ]);
+        }
 
         return back()->with('success', 'Data pelanggan berhasil ditambahkan!');
     }
@@ -35,7 +47,20 @@ class CustomerController extends Controller
             return back()->with('error', 'Pelanggan tidak bisa dihapus karena memiliki riwayat gangguan.');
         }
 
+        $custName = $customer->nama_pelanggan;
         $customer->delete();
+
+        // NOTIFIKASI UNTUK SEMUA ADMIN
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            Notification::create([
+                'user_id' => $admin->id,
+                'title' => 'PELANGGAN DIHAPUS',
+                'message' => auth()->user()->name . " menghapus data pelanggan: " . $custName,
+                'type' => 'activity'
+            ]);
+        }
+
         return back()->with('success', 'Data pelanggan berhasil dihapus.');
     }
 
@@ -51,13 +76,7 @@ class CustomerController extends Controller
             'alamat' => 'nullable',
         ]);
 
-        $customer->update([
-            'customer_id' => $request->customer_id,
-            'nama_pelanggan' => $request->nama_pelanggan,
-            'layanan' => $request->layanan,
-            'kontak' => $request->kontak,
-            'alamat' => $request->alamat,
-        ]);
+        $customer->update($request->all());
 
         return back()->with('success', 'Data pelanggan berhasil diperbarui!');
     }
