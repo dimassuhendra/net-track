@@ -5,14 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title') - NetTrack ISP</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"> -->
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Domine:wght@700&display=swap"
-        rel="stylesheet">
 
     <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
         body {
             font-family: 'Fredoka', sans-serif;
             scroll-behavior: smooth;
@@ -24,6 +22,12 @@
             -webkit-backdrop-filter: blur(12px);
         }
     </style>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Domine:wght@700&swap"
+        rel="stylesheet">
 </head>
 
 <body class="bg-[#F8FAFC] text-slate-900">
@@ -69,7 +73,7 @@
                         </p>
                     </div>
 
-                    <div class="flex items-center gap-2 relative" x-data="{ open: false }">
+                    <div class="flex items-center gap-2 relative" x-data="{ open: false }" x-init="open = false">
                         @php
                             $notifs = \App\Models\Notification::where('user_id', Auth::id())
                                 ->where('is_read', false)
@@ -82,7 +86,7 @@
                             class="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all relative">
                             <i class="fa-regular fa-bell text-xl"></i>
                             @if($unreadCount > 0)
-                                <span
+                                <span id="notif-badge-count"
                                     class="absolute top-2 right-2.5 w-5 h-5 bg-red-500 border-2 border-white rounded-full text-[9px] text-white flex items-center justify-center font-bold">
                                     {{ $unreadCount }}
                                 </span>
@@ -93,12 +97,15 @@
                             class="absolute right-0 top-full mt-3 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden"
                             x-transition:enter="transition ease-out duration-200"
                             x-transition:enter-start="opacity-0 translate-y-[-10px]"
-                            x-transition:enter-end="opacity-100 translate-y-0">
+                            x-transition:enter-end="opacity-100 translate-y-0"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 translate-y-0"
+                            x-transition:leave-end="opacity-0 translate-y-[-10px]">
 
                             <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                                 <h4 class="text-[10px] font-black uppercase tracking-widest text-slate-500">Notifikasi
                                     Baru</h4>
-                                <span
+                                <span id="notif-label-count"
                                     class="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold">{{ $unreadCount }}
                                     Pesan</span>
                             </div>
@@ -120,7 +127,7 @@
                                         </p>
                                     </div>
                                 @empty
-                                    <div class="p-10 text-center">
+                                    <div id="empty-notif" class="p-10 text-center">
                                         <div
                                             class="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
                                             <i class="fa-solid fa-bell-slash text-slate-300"></i>
@@ -151,8 +158,6 @@
                                     class="w-full h-full bg-white rounded-[14px] flex items-center justify-center overflow-hidden">
                                     <span
                                         class="text-blue-700 font-black text-lg">{{ substr(Auth::user()->name, 0, 1) }}</span>
-                                    {{-- Jika ada foto: <img src="path/to/photo.jpg" class="w-full h-full object-cover">
-                                    --}}
                                 </div>
                             </div>
                             <div
@@ -164,11 +169,6 @@
             </header>
 
             <main class="p-6 md:p-10 max-w-[1600px] mx-auto w-full">
-                <div class="sm:hidden mb-6">
-                    <h2 class="text-2xl font-black text-slate-800 tracking-tight">@yield('page_title')</h2>
-                    <p class="text-slate-500 text-sm">Dashboard Monitoring</p>
-                </div>
-
                 @yield('content')
             </main>
 
@@ -181,21 +181,17 @@
     </div>
 
     <script>
+        // Clock Function
         function updateClock() {
             const now = new Date();
-            const options = {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            };
+            const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
             document.getElementById('clock').innerText = now.toLocaleTimeString('id-ID', options).replace(/\./g, ':');
         }
         setInterval(updateClock, 1000);
         updateClock();
 
+        // Mark as Read Function
         function markAsRead(id) {
-            // Mencegah klik ganda
             const element = document.getElementById(`notif-item-${id}`);
             if (!element) return;
 
@@ -210,31 +206,36 @@
                 .then(async response => {
                     const data = await response.json();
                     if (response.ok && data.success) {
-                        // Efek visual: Hilang dengan halus
+                        // Animasi keluar
                         element.style.transition = 'all 0.4s ease';
                         element.style.opacity = '0';
                         element.style.transform = 'translateX(30px)';
 
                         setTimeout(() => {
                             element.remove();
-                            // Reload otomatis agar angka badge di lonceng terupdate
-                            window.location.reload();
+
+                            // Update angka badge & label secara real-time tanpa refresh halaman
+                            const badgeCount = document.getElementById('notif-badge-count');
+                            const labelCount = document.getElementById('notif-label-count');
+
+                            if (badgeCount) {
+                                let currentVal = parseInt(badgeCount.innerText) - 1;
+                                if (currentVal > 0) {
+                                    badgeCount.innerText = currentVal;
+                                    if (labelCount) labelCount.innerText = `${currentVal} Pesan`;
+                                } else {
+                                    badgeCount.remove();
+                                    if (labelCount) labelCount.innerText = `0 Pesan`;
+                                    // Opsional: Munculkan tampilan kosong jika sudah tidak ada notif
+                                    location.reload();
+                                }
+                            }
                         }, 400);
-                    } else {
-                        console.error('Server error:', data);
-                        alert('Gagal menandai notifikasi.');
                     }
                 })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-                });
+                .catch(error => console.error('Error:', error));
         }
     </script>
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-    </style>
 </body>
 
 </html>
