@@ -60,7 +60,7 @@ class TicketController extends Controller
 
         return redirect()->back()->with([
             'success' => 'Tiket berhasil dibuat!',
-            'new_ticket' => $ticket->load('pic', 'customer')
+            'new_ticket' => $ticket->load('pic', 'customer', 'category')
         ]);
     }
 

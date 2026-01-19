@@ -131,7 +131,7 @@
                                 <label
                                     class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Prioritas</label>
                                 <div class="flex gap-2">
-                                    @foreach(['Low' => 'blue', 'Medium' => 'amber', 'High' => 'red'] as $prio => $color)
+                                    @foreach(['Low' => 'blue', 'Medium' => 'amber', 'High' => 'red' , 'Critical' => 'purple'] as $prio => $color)
                                         <label class="flex-1 cursor-pointer">
                                             <input type="radio" name="priority" value="{{ $prio }}" class="peer hidden" {{ $prio == 'Medium' ? 'checked' : '' }}>
                                             <div
@@ -197,28 +197,44 @@
     </div>
 
     @if(session('success'))
-        @php $ticket = session('new_ticket'); @endphp
+        @php 
+            $ticket = session('new_ticket');
+            $picName = $ticket->pic->name;
+            $picPhone = $ticket->pic->phone;
+            
+            // Format Pesan WhatsApp
+            $message = "Halo *$picName*, ada tugas tiket baru:\n\n"
+                    . "*No Tiket:* " . $ticket->ticket_number . "\n"
+                    . "*Pelanggan:* " . $ticket->customer->nama_pelanggan . "\n"
+                    . "*Masalah:* " . $ticket->rincian_masalah . "\n"
+                    . "*Prioritas:* " . $ticket->priority . "\n\n"
+                    . "Mohon segera ditindaklanjuti. Terima kasih.";
+            
+            $waUrl = "https://wa.me/" . $picPhone . "?text=" . urlencode($message);
+        @endphp
+
         <div id="successModal" class="fixed inset-0 z-[99] flex items-center justify-center p-4">
             <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"></div>
-            <div
-                class="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 max-w-md w-full relative z-10 text-center shadow-2xl">
-                <div
-                    class="w-16 h-16 md:w-20 md:h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+            <div class="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-10 max-w-md w-full relative z-10 text-center shadow-2xl animate-in zoom-in duration-300">
+                <div class="w-16 h-16 md:w-20 md:h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
                     <i class="fa-solid fa-check text-2xl md:text-3xl"></i>
                 </div>
-                <h3 class="text-lg md:text-xl font-black text-slate-800 mb-2 uppercase">Berhasil!</h3>
+                <h3 class="text-lg md:text-xl font-black text-slate-800 mb-2 uppercase">Tiket Berhasil Dibuat</h3>
                 <p class="text-slate-500 text-xs md:text-sm mb-6 md:mb-8 leading-relaxed">
-                    Tiket <b>{{ $ticket->ticket_number }}</b> telah disimpan.
+                    Nomor Tiket: <span class="font-bold text-blue-600">{{ $ticket->ticket_number }}</span><br>
+                    Tugas telah diberikan kepada <b>{{ $picName }}</b>.
                 </p>
 
                 <div class="flex flex-col gap-3">
-                    <a href="#"
-                        class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 text-sm">
-                        <i class="fa-brands fa-whatsapp text-lg"></i> KIRIM WA
+                    <a href="{{ $waUrl }}" target="_blank"
+                        class="w-full bg-emerald-500 text-white py-4 rounded-2xl font-bold hover:bg-emerald-600 transition-all flex items-center justify-center gap-3 text-sm shadow-lg shadow-emerald-200">
+                        <i class="fa-brands fa-whatsapp text-xl"></i> 
+                        <span>NOTIFIKASI PIC (WA)</span>
                     </a>
+                    
                     <button onclick="document.getElementById('successModal').remove()"
-                        class="w-full bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all text-sm">
-                        TUTUP
+                        class="w-full bg-slate-100 text-slate-500 py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all text-sm uppercase tracking-widest">
+                        Selesai
                     </button>
                 </div>
             </div>

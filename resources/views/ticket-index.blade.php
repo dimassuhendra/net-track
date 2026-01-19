@@ -103,7 +103,7 @@
                                 <td class="px-8 py-5">
                                     <div class="flex flex-col items-center">
                                         <div
-                                            class="w-2 h-8 rounded-full {{ $ticket->priority == 'High' ? 'bg-red-500' : ($ticket->priority == 'Medium' ? 'bg-amber-500' : 'bg-blue-500') }}">
+                                            class="w-2 h-8 rounded-full {{ $ticket->priority == 'Critical' ? 'bg-purple-500' : ($ticket->priority == 'High' ? 'bg-red-500' : ($ticket->priority == 'Medium' ? 'bg-amber-500' : 'bg-blue-500')) }}">
                                         </div>
                                         <span
                                             class="text-[8px] font-black mt-1 text-slate-400 uppercase">{{ $ticket->priority }}</span>
